@@ -1,39 +1,35 @@
-﻿using sqlapp.Models;
-using System.Data.SqlClient;
+﻿using MySql.Data.MySqlClient;
+using sqlapp.Models;
+using System.Text.Json;
 
 namespace sqlapp.Services
 {
-    public class ProductService
+    public class ProductService : IProductService
     {
-        public static string db_source = "appserver1258.database.windows.net";
-        public static string db_user = "sqladmin";
-        public static string db_password = "PasswordSql01#";
-        public static string db_database = "appdb";
+        private readonly IConfiguration _configuration;
 
-        private SqlConnection GetConnection()
+        public ProductService(IConfiguration configuration)
         {
-            SqlConnectionStringBuilder sqlConnectionStringBuilder = new()
-            {
-                DataSource = db_source,
-                UserID = db_user,
-                Password = db_password,
-                InitialCatalog = db_database
-            };
-
-            return new SqlConnection(sqlConnectionStringBuilder.ConnectionString);
+            _configuration = configuration;
         }
 
-        public List<Product> GetProducts()
+        private MySqlConnection GetConnection()
+        {
+            string connectionString = "Server=mysql; Port=3306; Database=appdb; Uid=root; Pwd=Password01#; SslMode=Preferred;";
+            return new MySqlConnection(connectionString);
+        }
+
+        public async Task<List<Product>> GetProducts()
         {
             List<Product> _product_lst = new List<Product>();
             string _statement = "SELECT ProductID,ProductName,Quantity from Products";
-            SqlConnection _connection = GetConnection();
+            MySqlConnection _connection = GetConnection();
 
             _connection.Open();
 
-            SqlCommand _sqlcommand = new SqlCommand(_statement, _connection);
+            MySqlCommand _sqlcommand = new MySqlCommand(_statement, _connection);
 
-            using (SqlDataReader _reader = _sqlcommand.ExecuteReader())
+            using (MySqlDataReader _reader = _sqlcommand.ExecuteReader())
             {
                 while (_reader.Read())
                 {
@@ -49,6 +45,15 @@ namespace sqlapp.Services
             }
             _connection.Close();
             return _product_lst;
+
+            //string functionUrl = "https://appfunction1258.azurewebsites.net/api/GetProducts?code=zX1OwH6QdIu-KD9hMyk4aaSXYIRmo3ADhylteK91YLYQAzFuK27UBw==";
+
+            //using (HttpClient client = new HttpClient())
+            //{
+            //    HttpResponseMessage response = await client.GetAsync(functionUrl);
+            //    string content = await response.Content.ReadAsStringAsync();
+            //    return JsonSerializer.Deserialize<List<Product>>(content);
+            //}
         }
     }
 }
